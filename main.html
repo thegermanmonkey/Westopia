@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Taxy — Slider</title>
+<link rel="stylesheet" href="main.css">
+</head>
+<body>
+  <div class="center">
+    <div class="content">
+      <!-- left: bars group includes echo, main, and tax-owed bar immediately to the right of main -->
+      <div class="bars" role="group" aria-label="Taxy sliders">
+        <!-- Echo bar (left) -->
+        <div class="slider-wrap echo-wrap" aria-hidden="true">
+          <div class="echo-ticks" aria-hidden="true">
+            <div class="tick-item" data-value="0"><div class="tick-label">$0</div><div class="tick"></div></div>
+            <div class="tick-item" data-value="24000"><div class="tick-label">$24,000</div><div class="tick"></div></div>
+            <div class="tick-item" data-value="62000"><div class="tick-label">$62,000</div><div class="tick"></div></div>
+            <div class="tick-item" data-value="140000"><div class="tick-label">$140,000</div><div class="tick"></div></div>
+            <div class="tick-item" data-value="196000"><div class="tick-label">$196,000</div><div class="tick"></div></div>
+            <div class="tick-item" data-value="244000"><div class="tick-label">$244,000</div><div class="tick"></div></div>
+          </div>
+          <input id="echoSlider" class="vertical echo" type="range" min="0" max="260000" step="100" value="0" aria-label="Echo slider">
+        </div>
+
+        <!-- Main bar (center) -->
+        <div class="slider-column" role="group" aria-label="Taxy main slider container">
+          <div class="label-block" aria-hidden="true">
+            <div class="label-title">Total Income</div>
+            <div id="incomeValue" class="income-value">$0</div>
+          </div>
+          <div class="slider-wrap">
+            <input id="taxySlider" class="vertical main" type="range" min="0" max="260000" step="100" value="0" aria-label="Taxy vertical slider">
+          </div>
+        </div>
+
+        <!-- Tax owed visual bar: immediately to the right of the main bar -->
+        <div class="tax-owed-column" aria-hidden="true">
+          <div class="tax-owed-wrap" aria-hidden="true">
+            <!-- absolute positioned red fill anchored at bottom (only filled portion visible) -->
+            <div id="taxOwedFill" class="tax-owed-fill" style="height:0%" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Tax owed fill"></div>
+
+            <!-- combined label + value that moves together above the filled area (hidden when tax = 0) -->
+            <div id="taxOwedIndicator" class="tax-owed-indicator" aria-hidden="true" style="display:none">
+              <div class="tax-owed-label">Tax Owed</div>
+              <div id="taxOwedValue" class="tax-owed-value">$0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tax table panel to the right -->
+      <aside class="tax-panel" aria-label="Tax owed panel">
+        <div class="tax-heading">Tax Owed</div>
+        <table class="tax-table" aria-label="Tax owed table">
+          <thead>
+            <tr><th>Rate</th><th>Amount</th></tr>
+          </thead>
+          <tbody id="taxTableBody">
+            <!-- JS will populate rows (highest → lowest) -->
+          </tbody>
+        </table>
+      </aside>
+    </div>
+  </div>
+
+<script src="main.js" defer></script>
+</body>
+</html>

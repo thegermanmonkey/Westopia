@@ -1,0 +1,346 @@
+:root{
+  --bg-dark: #141417;
+  --track-light: #9e9e9e;              /* darker grey for unfilled */
+  --track-light-alpha: rgba(158,158,158,0.2); /* 20% opacity unfilled */
+  --fill-blue: #1e90ff; /* bright blue */
+  --echo-green: #2e7d32; /* green for echo bar */
+}
+
+html,body{height:100%;margin:0;background:var(--bg-dark);color:#eee;font-family:system-ui,Segoe UI,Arial;}
+
+.center {
+  min-height:100vh;
+  /* allow the page to grow/scroll when sliders are taller than the viewport */
+  overflow: auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* container holding both bars, echo on the left */
+.bars {
+  display:flex;
+  gap:22px;               /* space between echo and main (updated) */
+  align-items: flex-end; /* baseline alignment so bars and tax-owed align at bottom */
+  justify-content:center;
+  margin-top: 12px;       /* margin instead of padding so labels don't push bars down */
+}
+
+/* visual container for each vertical slider */
+.slider-wrap {
+  width: 60px;         /* visual width of the vertical slider (main) */
+  height: 420px;       /* visual height of the vertical slider */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  /* single-purpose container for the track only (label moved out) */
+  position: relative;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  /* subtle drop shadow to lift the bar */
+  box-shadow: 0 8px 22px rgba(0,0,0,0.55);
+}
+
+/* Slightly smaller shadow & lift for the echo container */
+.slider-wrap.echo-wrap {
+  width: 20px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.45);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+/* ticks to the left of the echo bar */
+.echo-ticks {
+  position: absolute;
+  /* place ticks 12px to left of the echo bar */
+  right: calc(100% + 12px);
+  top: 0;
+  height: 100%;
+  width: 8px; /* base width for alignment; labels will overflow to the left */
+  overflow: visible;
+  pointer-events: none;
+}
+/* each tick item holds the horizontal dash and its left label */
+.echo-ticks .tick-item {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;              /* 12px distance between label and dash */
+  white-space: nowrap;
+  transform: translateY(-50%); /* center vertically at the given top position */
+}
+.echo-ticks .tick {
+  width: 8px;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+  flex: 0 0 auto;
+}
+.echo-ticks .tick-label {
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+}
+
+/* decorative highlight (top bevel) — positioned above the track,
+   uses pointer-events:none so it doesn't interfere with dragging. */
+.slider-wrap::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 8px);
+  height: 10px;
+  top: 6px;
+  border-radius: 8px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0));
+  mix-blend-mode: screen;
+  filter: blur(6px);
+  opacity: 0.9;
+}
+
+/* hover / active lift to emphasize "raised" effect */
+.slider-wrap:hover {
+  /* keep the static shadow but do not move the bar on hover */
+  transform: none;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.55);
+}
+
+/* column that contains the track; label is absolutely positioned so it doesn't affect bar alignment */
+.slider-column {
+  width: 60px;
+  height: 420px; /* same fixed height as .slider-wrap so bars always match exactly */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative; /* label will be positioned above without changing layout */
+}
+
+/* label positioned above the bar (doesn't change bar vertical position).
+   bottom: calc(100% + 12px) ensures the label's bottom sits at least 12px above the top of the bar */
+.label-block {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: #ddd;
+  pointer-events: none;
+}
+.label-title { font-size: 13px; color: #cbd5e1; letter-spacing: 0.4px; }
+.income-value { font-size: 16px; font-weight: 600; color: #fff; margin-top: 2px; }
+
+/* narrower echo container */
+.slider-wrap.echo-wrap {
+  width: 20px;         /* echo bar width as requested */
+}
+
+/* rotated range to make it vertical.
+   width represents the visual height after rotation */
+input[type="range"].vertical{
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent; /* gradient set by JS */
+  outline: none;
+  /* prevent the input from shrinking inside the 60px .slider-wrap */
+  flex: 0 0 auto;
+  width: 420px;   /* visual height */
+  max-width: none;
+  height: 60px;   /* visual thickness (becomes width after rotation) */
+  transform: rotate(-90deg);
+  cursor: pointer;
+  border-radius: 10px; /* rounded corners for main track background */
+  /* inner shadow to give thickness to the track itself */
+  box-shadow: inset 0 -8px 18px rgba(0,0,0,0.45);
+  transition: box-shadow 120ms ease;
+}
+
+/* echo input uses a thinner track (matches echo width) */
+input[type="range"].vertical.echo{
+  height: 20px;   /* echo thickness (becomes width after rotation) */
+  box-shadow: inset 0 -6px 12px rgba(0,0,0,0.35);
+}
+
+/* track - transparent because background handled in JS */
+input[type="range"].vertical::-webkit-slider-runnable-track{
+  height: 60px;
+  background: transparent;
+  border-radius: 10px;
+}
+input[type="range"].vertical::-moz-range-track{
+  height: 60px;
+  background: transparent;
+  border-radius: 10px;
+}
+
+/* echo track variants */
+input[type="range"].vertical.echo::-webkit-slider-runnable-track{
+  height: 20px;
+  background: transparent;
+  border-radius: 5px;
+}
+input[type="range"].vertical.echo::-moz-range-track{
+  height: 20px;
+  background: transparent;
+  border-radius: 5px;
+}
+
+/* remove visible "buttons" (thumbs) visually while keeping control draggable */
+input[type="range"].vertical::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  width: 1px;
+  height: 1px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  margin-top: 0;
+  opacity: 0;
+}
+input[type="range"].vertical::-moz-range-thumb{
+  width: 1px;
+  height: 1px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  opacity: 0;
+}
+
+/* make echo non-interactive (mouse won't drag it) but still visible */
+input.vertical.echo {
+  pointer-events: none;
+}
+
+/* make echo background corners slightly smaller */
+input[type="range"].vertical.echo {
+  border-radius: 5px;
+}
+
+/* layout wrap for bars + panel */
+.content {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+/* tax panel */
+.tax-panel {
+  min-width: 220px;
+  color: #e6eef8;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 12px;
+  margin-left: 54px; /* Shift the entire tax table element 54px to the right */
+}
+
+.tax-heading {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+/* table styling */
+.tax-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(255,255,255,0.02);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tax-table thead th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #bfc6e6;
+  background: rgba(255,255,255,0.01);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.tax-table tbody td {
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #cfd8e6;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+
+/* right column (amount) will be colored inline by JS to match bracket color */
+.tax-table tbody tr:last-child td { border-bottom: none; }
+
+/* tax owed column placed immediately to the right of the main bar */
+.tax-owed-column {
+  margin-left: 24px;        /* visual gap from main bar */
+  width: 60px;              /* same width as main slider */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+/* container for the red fill; anchor at bottom so fill grows upward.
+   transparent background so unfilled portion is not shown. */
+.tax-owed-wrap {
+  width: 60px;
+  height: 420px;               /* same height as sliders */
+  position: relative;          /* important: fill & indicator are absolutely positioned */
+  display: block;
+  /* no box-shadow or visible background on the container:
+     the filled element alone will show the shadow when visible */
+  overflow: hidden;            /* hide unfilled area */
+  background: transparent;
+  border-radius: 0;
+}
+
+/* the visible red fill; anchored to bottom */
+.tax-owed-fill {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background: linear-gradient(180deg,#ff4b4b,#d32f2f);
+  border-radius: 10px 10px 0 0; /* top corners rounded, bottom flat */
+  /* outer shadow gives the raised effect only when the fill exists.
+     also keep an inset shadow for depth. */
+  box-shadow: 0 8px 22px rgba(0,0,0,0.55), inset 0 -8px 18px rgba(0,0,0,0.35);
+  transition: height 140ms linear;
+  height: 0%;
+  display: none; /* hidden until tax > 0 */
+}
+
+/* combined indicator (label + value) that follows top of fill */
+.tax-owed-indicator {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  /* bottom is set dynamically by JS so indicator sits above fill with a gap */
+}
+
+.tax-owed-label {
+  color: #ddd;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.tax-owed-value {
+  color: #ff4b4b;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* ensure responsive layout */
+@media (max-width: 860px) {
+  .content { flex-direction: column; align-items:center; }
+  .tax-panel { width: 100%; max-width: 420px; }
+  .tax-owed-column { margin-left: 0; margin-top: 12px; }
+}
