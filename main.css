@@ -144,6 +144,8 @@ input[type="range"].vertical{
   appearance: none;
   background: transparent; /* gradient set by JS */
   outline: none;
+  /* allow horizontal pan for slider interaction but prevent vertical page scroll while touching */
+  touch-action: pan-x;
   /* prevent the input from shrinking inside the 60px .slider-wrap */
   flex: 0 0 auto;
   width: 420px;   /* visual height */
