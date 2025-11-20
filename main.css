@@ -226,7 +226,7 @@ input[type="range"].vertical.echo {
 
 /* tax panel */
 .tax-panel {
-  min-width: 220px;
+  min-width: 240px;
   color: #e6eef8;
   display: flex;
   flex-direction: column;
@@ -234,6 +234,7 @@ input[type="range"].vertical.echo {
   align-items: stretch;
   margin-top: 12px;
   margin-left: 54px; /* Shift the entire tax table element 54px to the right */
+  position: relative; /* allow absolutely-positioned system switch */
 }
 
 .tax-heading {
@@ -267,6 +268,33 @@ input[type="range"].vertical.echo {
   color: #cfd8e6;
   border-bottom: 1px solid rgba(255,255,255,0.02);
 }
+
+/* System switch radios (stacked vertically to the right) */
+.system-switch {
+  position: absolute;
+  left: calc(100% + 12px); /* place to the right of the tax panel with 12px gap */
+  top: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  pointer-events: auto;
+  z-index: 2; /* sit above other content */
+}
+.system-switch label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #dfe8f8;
+}
+.system-switch input[type="radio"] { transform: scale(1.05); }
+
+/* small utility for screen-reader-only text */
+.visually-hidden { position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px,1px,1px,1px); white-space: nowrap; }
 
 /* right column (amount) will be colored inline by JS to match bracket color */
 .tax-table tbody tr:last-child td { border-bottom: none; }

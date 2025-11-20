@@ -7,12 +7,33 @@ const taxOwedValue = document.getElementById('taxOwedValue');
 const echoTicksContainer = document.querySelector('.echo-ticks');
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
-// Updated brackets and colors (including pink)
-const brackets = [0, 20000, 50000, 90000, 160000, 240000, 300000];
-const rates = [0, 18, 28, 30, 36, 38];
-const colors = ['#2e7d32', '#B54312', '#ff9800', '#7b1fa2', '#fdd835', '#ff66b2'];
+// Data-driven tax systems and palette
+const baseColors = ['#2e7d32', '#1e88e5', '#ff9800', '#7b1fa2', '#fdd835', '#B54312', '#ff66b2', '#4caf50'];
 
-main.max = 300000;
+const taxSystems = {
+  Westopia: {
+    displayName: 'Westopia',
+    breaks: [0, 20000, 50000, 90000, 160000, 240000], // lower bounds
+    rates: [0, 18, 28, 30, 36, 38], // one per bracket
+    max: 300000
+  },
+  Australia: {
+    displayName: 'Australia',
+    breaks: [0, 18200, 45000, 135000, 190000],
+    rates: [0, 16, 30, 37, 45],
+    max: 300000
+  }
+  ,
+  USA: {
+    displayName: 'USA',
+    breaks: [0, 11925, 48475, 103350, 197300, 250525, 626350],
+    rates: [10, 12, 22, 24, 32, 35, 37],
+    max: 700000
+  }
+};
+
+let currentSystemKey = 'Westopia';
+main.max = taxSystems[currentSystemKey].max;
 
 // Main bar fill (bright blue, no dragger)
 function updateMainBarFill() {
@@ -68,20 +89,24 @@ function updateMainBarFill() {
 
 // Echo bar: colored segments and ticks/labels
 function updateEchoBar() {
+  const system = taxSystems[currentSystemKey];
   const min = Number(main.min) || 0;
-  const max = Number(main.max) || 1;
+  const max = Number(system.max) || Number(main.max) || 1;
   const val = Math.min(Number(main.value), max);
   const pctVal = (val - min) / (max - min) * 100;
 
-  // Gradient for colored brackets
+  // choose a slice of baseColors that preserves ordering
+  const colors = baseColors.slice(0, Math.max(1, system.breaks.length));
+
+  // build gradient stops using breaks (open final bracket up to system.max)
   const stops = [];
-  for (let i = 0; i < brackets.length - 1; i++) {
-    const startVal = brackets[i];
-    const endVal = brackets[i + 1];
+  for (let i = 0; i < system.breaks.length; i++) {
+    const startVal = system.breaks[i];
+    const endVal = (i + 1 < system.breaks.length) ? system.breaks[i + 1] : max;
     const startPct = ((startVal - min) / (max - min)) * 100;
     const endPct = ((endVal - min) / (max - min)) * 100;
-    const color = colors[i];
-    const unfilled = hexToRgba(color, 0.2);
+    const color = colors[i % colors.length];
+    const unfilled = hexToRgba(color, 0.22);
     if (pctVal <= startPct) {
       stops.push(`${unfilled} ${startPct}%`, `${unfilled} ${endPct}%`);
     } else if (pctVal >= endPct) {
@@ -94,10 +119,10 @@ function updateEchoBar() {
   echo.style.backgroundRepeat = 'no-repeat';
   echo.style.backgroundSize = '100% 100%';
 
-  // Dynamically create and position ticks/labels (no Infinity label)
+  // ticks/labels: show each interior break (skip 0)
   echoTicksContainer.innerHTML = '';
-  for (let i = 1; i < brackets.length - 1; i++) { // skip 0, skip last (Infinity)
-    const value = brackets[i];
+  for (let i = 1; i < system.breaks.length; i++) {
+    const value = system.breaks[i];
     const pct = ((value - min) / (max - min));
     const topPct = (1 - pct) * 100;
     const tickItem = document.createElement('div');
@@ -123,16 +148,19 @@ function hexToRgba(hex, alpha) {
 
 // Tax table: only text colored, not background
 function updateTaxTable() {
-  const income = Math.min(Number(main.value), Number(main.max));
+  const system = taxSystems[currentSystemKey];
+  const income = Math.min(Number(main.value), Number(system.max));
   const tbody = document.getElementById('taxTableBody');
   if (!tbody) return;
   tbody.innerHTML = '';
   let totalTax = 0;
-  for (let i = 0; i < brackets.length - 1; i++) {
-    const lower = brackets[i];
-    const upper = brackets[i + 1];
-    const rate = rates[i];
-    const color = colors[i];
+  const colors = baseColors.slice(0, Math.max(1, system.breaks.length));
+  // iterate each bracket (lower bound), final bracket upper = system.max
+  for (let i = 0; i < system.breaks.length; i++) {
+    const lower = system.breaks[i];
+    const upper = (i + 1 < system.breaks.length) ? system.breaks[i + 1] : system.max;
+    const rate = system.rates[i] ?? 0;
+    const color = colors[i % colors.length];
     const taxableIncome = Math.max(0, Math.min(income, upper) - lower);
     const tax = Math.round(taxableIncome * (rate / 100));
     totalTax += tax;
@@ -177,5 +205,41 @@ function synchronize() {
 
 main.addEventListener('input', synchronize);
 
-// Initial render
-synchronize();
+// Render radios and system switching
+function renderSystemRadios() {
+  const container = document.getElementById('systemSwitch');
+  if (!container) return;
+  container.innerHTML = '';
+  Object.keys(taxSystems).forEach(key => {
+    const id = `sys-${key}`;
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = 'taxSystem';
+    input.value = key;
+    input.id = id;
+    input.checked = (key === currentSystemKey);
+    input.addEventListener('change', () => applySystem(key));
+    const text = document.createElement('span');
+    text.textContent = taxSystems[key].displayName || key;
+    label.appendChild(input);
+    label.appendChild(text);
+    container.appendChild(label);
+  });
+}
+
+function applySystem(key) {
+  if (!taxSystems[key]) return;
+  currentSystemKey = key;
+  const system = taxSystems[key];
+  main.max = system.max;
+  echo.max = system.max;
+  // clamp current value
+  if (Number(main.value) > system.max) main.value = system.max;
+  // re-render everything
+  synchronize();
+}
+
+// Initial setup
+renderSystemRadios();
+applySystem(currentSystemKey);
